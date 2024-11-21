@@ -18,6 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include <string.h>
+#include <stdlib.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -58,6 +60,27 @@ static void MX_USART6_UART_Init(void);
 int __io_putchar(int ch){
 	HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
 	return ch;
+}
+
+void ExtractLatLonRaw(char *sentence, char *output){
+	char *tokens[20];
+	int token_counter = 0;
+	char *ptr = strtok(sentence, ",");
+
+	while (ptr != NULL && token_counter < 20){
+		tokens[token_counter++] = ptr;
+		ptr = strtok(NULL, ",");
+	}
+
+	if (token_counter < 6){
+		strcpy(output, "Invalid Data \r\n");
+		return;
+	}
+
+	char *lat_str = tokens[3];
+	char *lon_str = tokens[5];
+
+	sprintf(output, "%s,%s\r\n", lat_str, lon_str);
 }
 
 /* USER CODE BEGIN PFP */
@@ -107,7 +130,6 @@ int main(void)
   char rxBuffer[100];
   uint8_t idx = 0;
 
-  char msg[] = "Hello World \n\r";
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -118,11 +140,17 @@ int main(void)
  	  if (HAL_UART_Receive(&huart1, &rxData, 1, HAL_MAX_DELAY) == HAL_OK){
  	 		  if (rxData != '\n'){
  	 			  rxBuffer[idx++] = rxData;
+
+ 	 			  if (strstr(rxBuffer, "$GPRMC") != NULL){
+ 	 				  char output[50];
+ 	 				  ExtractLatLonRaw(rxBuffer, output);
+ 	 	 			  printf("%s\r\n", output);
+ 	 	 			 HAL_UART_Transmit(&huart6, (uint8_t*)output, 50, HAL_MAX_DELAY);
+ 	 	 			 HAL_UART_Transmit(&huart6, (uint8_t*)"\r\n", 4, HAL_MAX_DELAY);
+ 	 			  }
+
  	 		  } else {
  	 			  rxBuffer[idx] = '\0';
- 	 			  printf("%s\r\n", rxBuffer);
- 	 			  HAL_UART_Transmit(&huart6, (uint8_t*)rxBuffer, 100, HAL_MAX_DELAY);
- 	 			HAL_UART_Transmit(&huart6, (uint8_t*)"\r\n", 4, HAL_MAX_DELAY);
  	 			  idx = 0;
  	 		  }
  	 	  }
