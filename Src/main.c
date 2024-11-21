@@ -18,6 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include <stdio.h>
+#include <string.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -58,6 +60,39 @@ static void MX_USART6_UART_Init(void);
 int __io_putchar(int ch){
 	HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
 	return ch;
+}
+
+char* strip_decimal_new_string(const char *str) {
+    if (str == NULL) return NULL; // Handle NULL pointer
+
+    // Count the number of decimal points
+    int decimal_count = 0;
+    for (int i = 0; str[i] != '\0'; i++) {
+        if (str[i] == '.') {
+            decimal_count++;
+        }
+    }
+
+    // Calculate new length: original length minus number of decimals
+    size_t new_length = strlen(str) - decimal_count + 1; // +1 for null terminator
+    char *new_str = (char *)malloc(new_length * sizeof(char));
+    if (new_str == NULL) {
+        // Handle memory allocation failure
+        return NULL;
+    }
+
+    int read = 0;  // Index for reading original string
+    int write = 0; // Index for writing to new string
+
+    while (str[read] != '\0') {
+        if (str[read] != '.') {
+            new_str[write++] = str[read];
+        }
+        read++;
+    }
+    new_str[write] = '\0'; // Null-terminate the new string
+
+    return new_str;
 }
 
 /* USER CODE BEGIN PFP */
@@ -107,30 +142,50 @@ int main(void)
   char rxBuffer[100];
   uint8_t idx = 0;
 
+
   char msg[] = "Hello World \n\r";
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
-   {
-     /* USER CODE END WHILE */
- 	  if (HAL_UART_Receive(&huart1, &rxData, 1, HAL_MAX_DELAY) == HAL_OK){
- 	 		  if (rxData != '\n'){
- 	 			  rxBuffer[idx++] = rxData;
- 	 		  } else {
- 	 			  rxBuffer[idx] = '\0';
- 	 			  printf("%s\r\n", rxBuffer);
- 	 			  HAL_UART_Transmit(&huart6, (uint8_t*)rxBuffer, 100, HAL_MAX_DELAY);
- 	 			HAL_UART_Transmit(&huart6, (uint8_t*)"\r\n", 4, HAL_MAX_DELAY);
- 	 			  idx = 0;
- 	 		  }
- 	 	  }
-     /* USER CODE BEGIN 3 */
-   }
+     {
+       /* USER CODE END WHILE */
+   	  if (HAL_UART_Receive(&huart1, &rxData, 1, HAL_MAX_DELAY) == HAL_OK){
+   	 		  if (rxData != '\n'){
+   	 			  rxBuffer[idx++] = rxData;
+   	 		  } else {
+   	 			  rxBuffer[idx] = '\0';
+   	 			if (strstr(rxBuffer, "$GPRMC") != NULL){
+   	 				char *tokens[10];
+   	 				int count = 0;
+   	 				char *token = strtok(rxBuffer, ",");
 
-   /* USER CODE END 3 */
- }
+   	 				while (token != NULL && count < 10) {
+   	 			        tokens[count++] = token; // Store the token
+   	 			        token = strtok(NULL, ","); // Get the next token
+   	 			    }
+
+   	 				//HAL_UART_Transmit(&huart6, (uint8_t*)tokens[3], 10, HAL_MAX_DELAY);
+	 	 			//HAL_UART_Transmit(&huart6, (uint8_t*)"\r\n", 4, HAL_MAX_DELAY);
+   	 				//HAL_UART_Transmit(&huart6, (uint8_t*)tokens[5], 10, HAL_MAX_DELAY);
+	 	 			//HAL_UART_Transmit(&huart6, (uint8_t*)"\r\n", 4, HAL_MAX_DELAY);
+
+	 	 			int latitude = atoi(strip_decimal_new_string(tokens[3]));
+	 	 			int longitude = atoi(strip_decimal_new_string(tokens[5]));
+
+	 	 			printf("%i\r\n", latitude);
+	 	 			printf("%i\r\n", longitude);
+
+   	 			}
+   	 			  idx = 0;
+   	 		  }
+   	 	  }
+       /* USER CODE BEGIN 3 */
+     }
+
+     /* USER CODE END 3 */
+   }
 
 
 /**
