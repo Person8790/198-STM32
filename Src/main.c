@@ -116,14 +116,48 @@ int main(void)
    {
      /* USER CODE END WHILE */
  	  if (HAL_UART_Receive(&huart1, &rxData, 1, HAL_MAX_DELAY) == HAL_OK){
- 	 		  if (rxData != '\n'){
+ 		  	  if (rxData != '\n'){
  	 			  rxBuffer[idx++] = rxData;
- 	 		  } else {
- 	 			  rxBuffer[idx] = '\0';
- 	 			  printf("%s\r\n", rxBuffer);
- 	 			  HAL_UART_Transmit(&huart6, (uint8_t*)rxBuffer, 100, HAL_MAX_DELAY);
- 	 			HAL_UART_Transmit(&huart6, (uint8_t*)"\r\n", 4, HAL_MAX_DELAY);
- 	 			  idx = 0;
+ 	 		  }
+
+ 		  	  else {
+ 		  		  rxBuffer[idx] = '\0';
+ 		  		  printf("%s\r\n", rxBuffer);
+
+ 		  		  int i=0, j = 0, commaCnt = 0;
+ 		  		  memset(buffer, '\0', 12);
+
+ 		  		  while (commaCnt < 3){
+					if (rxBuffer[idx] == ',' && commaCnt<2){
+						commaCnt++;
+						continue;
+					}
+
+					if (commaCnt<2){
+
+					}
+
+
+						buffer[i] = rxBuffer[inx];
+						i++; idx++;
+ 		  		  	}
+
+					if (strlen(buffer) < 6){
+						printf("Error");
+					}
+
+					int16_t num = (atoi(buffer));
+					while (buffer[j] != '.') j++;
+					j++;
+
+					int declen = (strlen(buffer))-j;
+					int dec = atoi ((char *) buffer+j);
+					float lat = (num/100.0) + (dec/pow(10, (declen+2)));
+
+
+					HAL_UART_Transmit(&huart6, (uint8_t*)rxBuffer, 100, HAL_MAX_DELAY);
+					HAL_UART_Transmit(&huart6, (uint8_t*)"\r\n", 2, HAL_MAX_DELAY);
+					idx = 0;
  	 		  }
  	 	  }
      /* USER CODE BEGIN 3 */
