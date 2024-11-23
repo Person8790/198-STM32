@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include <stdio.h>
+#include "stm32f4xx_hal.h"
 #include <string.h>
 
 /* Private includes ----------------------------------------------------------*/
@@ -138,55 +139,52 @@ int main(void)
   MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  uint8_t rxData;
-  char rxBuffer[100];
-  uint8_t idx = 0;
+  //uint8_t rxData;
+  //char rxBuffer[100];
+  //uint8_t idx = 0;
 
 
-  char msg[] = "Hello World \n\r";
+  //char msg[] = "Hello World \n\r";
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
+  char txData[] = "Hello from STM32 A\r\n";
+   char rxData[100];
+
+   while (1)
+   {
+     /* Transmit data */
+     if (HAL_UART_Transmit(&huart6, (uint8_t*)txData, strlen(txData), HAL_MAX_DELAY) != HAL_OK)
      {
-       /* USER CODE END WHILE */
-   	  if (HAL_UART_Receive(&huart1, &rxData, 1, HAL_MAX_DELAY) == HAL_OK){
-   	 		  if (rxData != '\n'){
-   	 			  rxBuffer[idx++] = rxData;
-   	 		  } else {
-   	 			  rxBuffer[idx] = '\0';
-   	 			if (strstr(rxBuffer, "$GPRMC") != NULL){
-   	 				char *tokens[10];
-   	 				int count = 0;
-   	 				char *token = strtok(rxBuffer, ",");
-
-   	 				while (token != NULL && count < 10) {
-   	 			        tokens[count++] = token; // Store the token
-   	 			        token = strtok(NULL, ","); // Get the next token
-   	 			    }
-
-   	 				//HAL_UART_Transmit(&huart6, (uint8_t*)tokens[3], 10, HAL_MAX_DELAY);
-	 	 			//HAL_UART_Transmit(&huart6, (uint8_t*)"\r\n", 4, HAL_MAX_DELAY);
-   	 				//HAL_UART_Transmit(&huart6, (uint8_t*)tokens[5], 10, HAL_MAX_DELAY);
-	 	 			//HAL_UART_Transmit(&huart6, (uint8_t*)"\r\n", 4, HAL_MAX_DELAY);
-
-	 	 			int latitude = atoi(strip_decimal_new_string(tokens[3]));
-	 	 			int longitude = atoi(strip_decimal_new_string(tokens[5]));
-
-	 	 			printf("%i\r\n", latitude);
-	 	 			printf("%i\r\n", longitude);
-
-   	 			}
-   	 			  idx = 0;
-   	 		  }
-   	 	  }
-       /* USER CODE BEGIN 3 */
+       /* Transmission Error */
+       Error_Handler();
+     }
+     else{
+    	 printf("d");
      }
 
-     /* USER CODE END 3 */
-   }
+     /* Receive data */
+     memset(rxData, 0, sizeof(rxData)); // Clear the buffer
+     if (HAL_UART_Receive(&huart6, (uint8_t*)rxData, sizeof(rxData)-1, 5000) == HAL_OK)
+     {
+       /* Null-terminate the received string */
+       rxData[strlen((char*)rxData)] = '\0';
+       printf("%s\r\n", rxData);// Wait for a second
 
+       printf("e");
+       /* Process received data */
+       // For example, print to a debug console or toggle an LED
+     }
+     else
+     {
+    	 printf("%s\r\n", "a");
+     }
+     printf("%s\r\n", rxData);
+
+     HAL_Delay(1000);
+   }
+ }
 
 /**
   * @brief System Clock Configuration
@@ -358,9 +356,10 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
   while (1)
   {
+	     printf("c");// Wait for a second
+
   }
   /* USER CODE END Error_Handler_Debug */
 }
