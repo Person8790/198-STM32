@@ -138,54 +138,109 @@ int main(void)
   MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  uint8_t rxData;
   char rxBuffer[100];
+
   uint8_t idx = 0;
+  uint8_t rxGPS = 0;
 
-
-  char msg[] = "Hello World \n\r";
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-     {
-       /* USER CODE END WHILE */
-   	  if (HAL_UART_Receive(&huart1, &rxData, 1, HAL_MAX_DELAY) == HAL_OK){
-   	 		  if (rxData != '\n'){
-   	 			  rxBuffer[idx++] = rxData;
-   	 		  } else {
+  char txData[100] = "";
+  char rxData[100];
+
+  while (1) { /* Receive data */
+   	  if (HAL_UART_Receive(&huart1, &rxGPS, 1, HAL_MAX_DELAY) == HAL_OK){
+   	 		  if (rxGPS != '\n'){
+
+   	 			  rxBuffer[idx++] = rxGPS;
+   	 		  }
+   	 		  else {
    	 			  rxBuffer[idx] = '\0';
-   	 			if (strstr(rxBuffer, "$GPRMC") != NULL){
-   	 				char *tokens[10];
+   	 			  //printf("%s\r\n", rxBuffer);
+
+
+   	 			if (strstr(rxBuffer, "$GPRMC") != NULL && strstr(rxBuffer, "N") != NULL  && strstr(rxBuffer, "W") != NULL){
+   	 				//printf("%s\r\n", rxBuffer);
+
+   	 				int lat_idx = 0, long_idx = 0;
+
+   	 				char *tokens[50];
    	 				int count = 0;
    	 				char *token = strtok(rxBuffer, ",");
 
-   	 				while (token != NULL && count < 10) {
+   	 				while (token != NULL && count < 50) {
+   	 			        if (count>0 && strstr(tokens[count-1], "N") != NULL){
+   	 			        	lat_idx = count-2;
+   	 			        }
+
+   	 			        if (count>0 && strstr(tokens[count-1], "W") != NULL){
+   	 			        	long_idx = count-2;
+   	 			        	break;
+   	 			        }
+
    	 			        tokens[count++] = token; // Store the token
    	 			        token = strtok(NULL, ","); // Get the next token
+
+
    	 			    }
 
-   	 				//HAL_UART_Transmit(&huart6, (uint8_t*)tokens[3], 10, HAL_MAX_DELAY);
-	 	 			//HAL_UART_Transmit(&huart6, (uint8_t*)"\r\n", 4, HAL_MAX_DELAY);
-   	 				//HAL_UART_Transmit(&huart6, (uint8_t*)tokens[5], 10, HAL_MAX_DELAY);
-	 	 			//HAL_UART_Transmit(&huart6, (uint8_t*)"\r\n", 4, HAL_MAX_DELAY);
+   	 				HAL_Delay(10);
+	 	 			printf("%i\r\n", lat_idx);
+	 	 			printf("%i\r\n", long_idx);
 
-	 	 			int latitude = atoi(strip_decimal_new_string(tokens[3]));
-	 	 			int longitude = atoi(strip_decimal_new_string(tokens[5]));
+	 	 			char toks[100] = "";
+	 	 			strcat(toks, tokens[lat_idx]);
+	 	 			strcat(toks, ",");
+	 	 			strcat(toks, tokens[long_idx]);
+
+	 	 			printf("%s\r\n", toks);
+
+
+
+	 	 			int latitude = atoi(strip_decimal_new_string(tokens[lat_idx]));
+	 	 			int longitude = atoi(strip_decimal_new_string(tokens[long_idx]));
+
+
+	 	 			HAL_UART_Transmit(&huart6, (uint8_t*)toks, 100, HAL_MAX_DELAY);
+	 	 			//HAL_UART_Transmit(&huart6, (uint8_t*)",", 10, HAL_MAX_DELAY);
+	 	 			//HAL_UART_Transmit(&huart6, (uint8_t*)tokens[long_idx], 10, HAL_MAX_DELAY);
+
+
+
 
 	 	 			printf("%i\r\n", latitude);
 	 	 			printf("%i\r\n", longitude);
 
-   	 			}
-   	 			  idx = 0;
-   	 		  }
-   	 	  }
-       /* USER CODE BEGIN 3 */
-     }
+					  //printf("%s\r\n", rxBuffer);
+					  idx = 0;
 
-     /* USER CODE END 3 */
-   }
+					  memset(rxData, 0, sizeof(rxData)); // Clear the buffer
+					  if (HAL_UART_Receive(&huart6, (uint8_t*)rxData, sizeof(rxData)-1, 5000) == HAL_OK) {
+						  /* Null-terminate the received string */
+						  rxData[strlen((char*)rxData)] = '\0';
+						  /* Process received data */
+						  // For example, print to a debug console or toggle an LED
+					  }
+
+					  if (HAL_UART_Transmit(&huart6, (uint8_t*)txData, strlen(txData), HAL_MAX_DELAY) != HAL_OK) {
+						  /* Transmission Error */
+					  }
+					  //printf("%s\r\n", rxData);
+
+   	 			}
+
+   	 		  }
+
+   	 	  }
+
+   	  //-----------------------------------------------------------------------------------
+
+// Wait for a second
+  }
+}
+
 
 
 /**
@@ -358,7 +413,6 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
   while (1)
   {
   }
